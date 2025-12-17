@@ -7,19 +7,18 @@ const plugin: Deno.lint.Plugin = {
           TSTypeOperator(node) {
             if (node.operator !== "readonly") return;
             if (node.typeAnnotation.type !== "TSArrayType") return;
+            const elementType = node.typeAnnotation.elementType;
             context.report({
               node,
-              message: "Use ReadonlyArray<T> instead of readonly T[]",
+              message: `Use ReadonlyArray<${
+                context.sourceCode.getText(elementType)
+              }> instead of readonly ${
+                context.sourceCode.getText(elementType)
+              }[]`,
               fix(fixer) {
-                const arrayType = node.typeAnnotation;
-                if (arrayType.type !== "TSArrayType") {
-                  throw new Error("Unexpected type");
-                }
                 return fixer.replaceText(
                   node,
-                  `ReadonlyArray<${
-                    context.sourceCode.getText(arrayType.elementType)
-                  }>`,
+                  `ReadonlyArray<${context.sourceCode.getText(elementType)}>`,
                 );
               },
             });
@@ -35,7 +34,9 @@ const plugin: Deno.lint.Plugin = {
 
             context.report({
               node,
-              message: "Use Array<T> instead of T[]",
+              message: `Use Array<${
+                context.sourceCode.getText(node.elementType)
+              }> instead of ${context.sourceCode.getText(node.elementType)}[]`,
               fix(fixer) {
                 return fixer.replaceText(
                   node,
