@@ -29,6 +29,36 @@ const plugin: Deno.lint.Plugin = {
         };
       },
     },
+    "no-array-shorthand": {
+      create(context) {
+        return {
+          TSArrayType(node) {
+            // deno-lint-ignore no-explicit-any
+            const parent = (node as any).parent;
+            if (
+              parent &&
+              parent.type === "TSTypeOperator" &&
+              parent.operator === "readonly"
+            ) {
+              return;
+            }
+
+            context.report({
+              node,
+              message: "Use Array<T> instead of T[]",
+              fix(fixer) {
+                // deno-lint-ignore no-explicit-any
+                const elementType = (node as any).elementType;
+                return fixer.replaceText(
+                  node,
+                  `Array<${context.sourceCode.getText(elementType)}>`,
+                );
+              },
+            });
+          },
+        };
+      },
+    },
   },
 };
 export default plugin;
