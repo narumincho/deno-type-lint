@@ -4,26 +4,26 @@ const plugin: Deno.lint.Plugin = {
   // Object with rules. The property name is the rule name and
   // will be shown in the error output as well.
   rules: {
-    "my-rule": {
-      // Inside the `create(context)` method is where you'll put your logic.
-      // It's called when a file is being linted.
-      create(context) { 
-        // Return an AST visitor object
+    "no-readonly-array-shorthand": {
+      create(context) {
         return {
-          // Here in this example we forbid any identifiers being named `_a`
-          Identifier(node) {
-            if (node.name === "_a") {
-              // Report a lint error with a custom message
-              context.report({
-                node,
-                message: "should be _b",
-                // Optional: Provide a fix, which can be applied when
-                // the user runs `deno lint --fix`
-                fix(fixer) {
-                  return fixer.replaceText(node, "_b");
-                },
-              });
-            }
+          TSTypeOperator(node) {
+            if (node.operator !== "readonly") return;
+            if (node.typeAnnotation.type !== "TSArrayType") return;
+
+            context.report({
+              node,
+              message: "Use ReadonlyArray<T> instead of readonly T[]",
+              fix(fixer) {
+                // deno-lint-ignore no-explicit-any
+                const arrayType = node.typeAnnotation as any;
+                const elementType = arrayType.elementType;
+                return fixer.replaceText(
+                  node,
+                  `ReadonlyArray<${context.sourceCode.getText(elementType)}>`,
+                );
+              },
+            });
           },
         };
       },
