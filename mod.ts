@@ -10,13 +10,14 @@ const plugin: Deno.lint.Plugin = {
           TSTypeOperator(node) {
             if (node.operator !== "readonly") return;
             if (node.typeAnnotation.type !== "TSArrayType") return;
-
             context.report({
               node,
               message: "Use ReadonlyArray<T> instead of readonly T[]",
               fix(fixer) {
-                // deno-lint-ignore no-explicit-any
-                const arrayType = node.typeAnnotation as any;
+                const arrayType = node.typeAnnotation;
+                if (arrayType.type !== "TSArrayType") {
+                  throw new Error("Unexpected type");
+                }
                 const elementType = arrayType.elementType;
                 return fixer.replaceText(
                   node,
